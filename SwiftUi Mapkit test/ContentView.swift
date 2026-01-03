@@ -8,14 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
+    
+    let parses: ParseCourses = ParseCourses()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        ConvertTouchToPoint()
     }
 }
 
