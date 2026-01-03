@@ -12,10 +12,10 @@ import MapKit
 struct ConvertTouchToPoint: View {
     
     // tapped coordinates to be displayed on the map
-    @State private var coords: [Location] = []
+    @State public var coords: [Location] = []
     @State private var curLabel: String = ""
-    @State private var selectedCoordinate: CLLocationCoordinate2D?
-    @State private var showTextField: Bool = false
+    @State public var selectedCoordinate: CLLocationCoordinate2D?
+    @State public var showTextField: Bool = false
     @State private var selectedRouteIndex = 0
     
     @StateObject private var generator: GenerateRoute = GenerateRoute()
@@ -27,9 +27,7 @@ struct ConvertTouchToPoint: View {
                 ZStack(alignment: .top) {
                     Map() {
                         ForEach(coords) { location in
-                            Annotation("", coordinate: location.coord) {
-                                Text(location.label)
-                            }
+                            Marker(location.label, coordinate: location.coord)
                         }
                         if (generator.hasData()) {
                             ForEach(generator.route.indices, id: \.self) { index in
@@ -43,30 +41,13 @@ struct ConvertTouchToPoint: View {
                         selectedCoordinate = mapCoord
                         showTextField = true
                     }
+                    .mapControls {
+                        MapCompass(scope: .none)
+                    }
                     VStack {
                         if (showTextField) {
-                            HStack {
-                                TextField("Enter location label", text: $curLabel)
-                                    .foregroundStyle(.black)
-                                    .padding(10)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.white)
-                                    )
-                                Button {
-                                    if let selectedCoordinate {
-                                        let curLocation = Location(coord: selectedCoordinate, label: curLabel)
-                                        coords.append(curLocation)
-                                        curLabel = ""
-                                    }
-                                    coords = formatter.convertLocations(locations: coords)
-                                    showTextField = false
-                                } label: {
-                                    Text("Ok")
-                                        .padding(5)
-                                }
-                                .foregroundStyle(Color.blue)
-                            }
+                            CoordinateSelectionView(coords: $coords, showTextField: $showTextField, selectedCoordinate: $selectedCoordinate)
+                                .padding(10)
                         }
                         Spacer()
                         if generator.hasData() {

@@ -11,11 +11,12 @@ import CoreLocation
 
 struct Location: Identifiable, Equatable {
     static func == (lhs: Location, rhs: Location) -> Bool {
-        return lhs.label == rhs.label
+        return lhs.time == rhs.time
     }
     // CLLocationCoordinate2D doesn't conform to equatable or hashable, which means we need an extra struct for iteration
     let id = UUID()
     let coord: CLLocationCoordinate2D
+    let time: String
     let label: String
 }
 
@@ -37,7 +38,7 @@ struct Route: Identifiable {
             let response = try await calculateRoutes(request)
             return response.routes.first!
         } catch {
-            print("Could not generate a path from \(source.label) to \(destination.label)")
+            print("Could not generate a path from \(source.time) to \(destination.time)")
         }
         return nil
     }
@@ -74,8 +75,8 @@ struct Route: Identifiable {
     // travel time of the MKRoute
     public func calculateExcessTime() -> String {
         let formatter = FormatTime()
-        let sourceDate = formatter.convert(time: destination.label)
-        let interval: Double = sourceDate.timeIntervalSince(formatter.convert(time: source.label))
+        let sourceDate = formatter.convert(time: destination.time)
+        let interval: Double = sourceDate.timeIntervalSince(formatter.convert(time: source.time))
         let excessTime: Int = Int(interval - path!.expectedTravelTime)
         return "\(excessTime / 60)m \(excessTime % 60)s"
     }
