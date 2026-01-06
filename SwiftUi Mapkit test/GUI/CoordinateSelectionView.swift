@@ -10,12 +10,11 @@ import MapKit
 
 struct CoordinateSelectionView: View {
     
-    @Binding public var coords: [Location]
     @State public var curLabel: String = ""
     @Binding public var showTextField: Bool
     @Binding public var selectedCoordinate: CLLocationCoordinate2D?
+    @ObservedObject public var tracker: DayTracker
     @State public var time: String = ""
-    public var formatter: FormatTime = FormatTime()
     
     var body: some View {
         VStack {
@@ -39,16 +38,15 @@ struct CoordinateSelectionView: View {
                     )
                 Button {
                     if let selectedCoordinate {
-                        if formatter.isValidTime(time: time) {
+                        if tracker.isValidTime(value: time) {
                             let curLocation = Location(coord: selectedCoordinate, time: time, label: curLabel)
-                            coords.append(curLocation)
+                            tracker.addData(value: curLocation)
                             curLabel = ""
                             showTextField = false
                         } else {
                             time = "Invalid time (HH:MM)"
                         }
                     }
-                    coords = formatter.convertLocations(locations: coords)
                 } label: {
                     Image(.send)
                         .padding(5)

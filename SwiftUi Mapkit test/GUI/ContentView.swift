@@ -12,7 +12,10 @@ struct ContentView: View {
     let parses: ParseCourses = ParseCourses()
     
     var body: some View {
-        ConvertTouchToPoint()
+        ZStack(alignment: .topLeading) {
+            ConvertTouchToPoint()
+            SideBarContent()
+        }
     }
 }
 

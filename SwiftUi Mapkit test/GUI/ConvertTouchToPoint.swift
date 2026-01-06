@@ -11,22 +11,20 @@ import MapKit
 
 struct ConvertTouchToPoint: View {
     
-    // tapped coordinates to be displayed on the map
-    @State public var coords: [Location] = []
     @State private var curLabel: String = ""
     @State public var selectedCoordinate: CLLocationCoordinate2D?
     @State public var showTextField: Bool = false
     @State private var selectedRouteIndex = 0
     
     @StateObject private var generator: GenerateRoute = GenerateRoute()
-    private var formatter: FormatTime = FormatTime()
+    @StateObject private var tracker: DayTracker = DayTracker(internalSelect: "M")
     
     var body: some View {
         VStack {
             MapReader { reader in
                 ZStack(alignment: .top) {
                     Map() {
-                        ForEach(coords) { location in
+                        ForEach(tracker.getData()) { location in
                             Marker(location.label, coordinate: location.coord)
                         }
                         if (generator.hasData()) {
@@ -46,7 +44,7 @@ struct ConvertTouchToPoint: View {
                     }
                     VStack {
                         if (showTextField) {
-                            CoordinateSelectionView(coords: $coords, showTextField: $showTextField, selectedCoordinate: $selectedCoordinate)
+                            CoordinateSelectionView(showTextField: $showTextField, selectedCoordinate: $selectedCoordinate, tracker: tracker)
                                 .padding(10)
                         }
                         Spacer()
@@ -59,9 +57,9 @@ struct ConvertTouchToPoint: View {
                 }
             }
         }
-        .task(id: coords) {
+        .task(id: tracker.currentSelection) {
             do {
-                try await generator.generateRoutes(locations: coords)
+                try await generator.generateRoutes(locations: tracker.getData())
                 print("entered task")
             } catch {
                 print("Unable to display route information, or not enough points available yet")
