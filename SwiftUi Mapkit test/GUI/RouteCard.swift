@@ -9,8 +9,8 @@ import SwiftUI
 
 struct RouteCard: View {
     
-    @Binding public var route: Route
-    @Binding public var selectedIndex: Int
+    public var route: Route
+    @ObservedObject public var tracker: DayTracker
     
     var body: some View {
         VStack {
@@ -44,15 +44,12 @@ struct RouteCard: View {
             }
             HStack {
                 Button {
-                    if selectedIndex > 0 {
-                        selectedIndex -= 1
-                    }
+                    tracker.decrementRouteSelection()
                 } label: {
                     Text("Previous Route")
                 }
                 Button {
-                    selectedIndex += 1
-
+                    tracker.incrementRouteSelection()
                 } label: {
                     Text("Next Route")
                 }

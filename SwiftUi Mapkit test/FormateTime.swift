@@ -16,7 +16,7 @@ struct FormatTime {
         let prefix = "2002-09-11T"
         let formatter = returnPreferredFormatter()
         let date = formatter.date(from: prefix + time)!
-        print(date.description)
+        //print(date.description)
         return date
         
     }
@@ -56,7 +56,7 @@ struct FormatTime {
         let prefix = "2002-09-11T"
         let formatter = returnPreferredFormatter()
         let date = formatter.date(from: prefix + time)
-        if let date {
+        if date != nil {
             return true
         } else {
             return false

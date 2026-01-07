@@ -14,7 +14,7 @@ class ParseCourses {
     
     func mapData() -> [String : String] {
         print("entering function")
-        var mapping: [String : String] = [:]
+        let mapping: [String : String] = [:]
         
         let exists = FileManager.default.fileExists(atPath: filepath)
         print("Exists:", exists)
@@ -28,7 +28,7 @@ class ParseCourses {
             // appararently we need this for some reason I don't understand
             let sharedString: SharedStrings? = try file.parseSharedStrings()
             
-            var workbooks = try file.parseWorkbooks()
+            let workbooks = try file.parseWorkbooks()
             // we just want the first workbook
             let inititalWorksheet : [(String?, String)] = try file.parseWorksheetPathsAndNames(workbook: workbooks.first!)
             print("passed initial worksheet")

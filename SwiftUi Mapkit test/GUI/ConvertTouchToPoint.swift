@@ -14,24 +14,30 @@ struct ConvertTouchToPoint: View {
     @State private var curLabel: String = ""
     @State public var selectedCoordinate: CLLocationCoordinate2D?
     @State public var showTextField: Bool = false
-    @State private var selectedRouteIndex = 0
+    @StateObject private var tracker: DayTracker = DayTracker(internalSelect: "Mon")
     
-    @StateObject private var generator: GenerateRoute = GenerateRoute()
-    @StateObject private var tracker: DayTracker = DayTracker(internalSelect: "M")
+    @State private var position: MapCameraPosition =
+        .camera(
+            MapCamera(
+                centerCoordinate: CLLocationCoordinate2D(
+                    latitude: 49.2606,
+                    longitude: -123.2460
+                ),
+                distance: 2_000
+            )
+        )
     
     var body: some View {
         VStack {
             MapReader { reader in
                 ZStack(alignment: .top) {
-                    Map() {
+                    Map(position: $position) {
                         ForEach(tracker.getData()) { location in
-                            Marker(location.label, coordinate: location.coord)
+                            Marker("\(location.label) \(location.time)", coordinate: location.coord)
                         }
-                        if (generator.hasData()) {
-                            ForEach(generator.route.indices, id: \.self) { index in
-                                MapPolyline(generator.route[index].path!)
-                                    .stroke(index == selectedRouteIndex ? .blue : .gray, lineWidth: 4)
-                            }
+                        ForEach(tracker.currentRoutes) { route in
+                            MapPolyline(route.path!)
+                                .stroke(tracker.getSelectedRoute() != nil && route == tracker.getSelectedRoute()! ? .blue : .gray, lineWidth: 4)
                         }
                     }
                     .onTapGesture() { coord in
@@ -47,9 +53,11 @@ struct ConvertTouchToPoint: View {
                             CoordinateSelectionView(showTextField: $showTextField, selectedCoordinate: $selectedCoordinate, tracker: tracker)
                                 .padding(10)
                         }
+                        SelectablePicker()
+                            .environmentObject(tracker)
                         Spacer()
-                        if generator.hasData() {
-                            RouteCard(route: $generator.route[selectedRouteIndex], selectedIndex: $selectedRouteIndex)
+                        if let route = tracker.getSelectedRoute() {
+                            RouteCard(route: route, tracker: tracker)
                                 .padding(10)
                                 .backgroundStyle(.black)
                         }
@@ -59,11 +67,12 @@ struct ConvertTouchToPoint: View {
         }
         .task(id: tracker.currentSelection) {
             do {
-                try await generator.generateRoutes(locations: tracker.getData())
+                try await tracker.generateRoutes()
                 print("entered task")
             } catch {
                 print("Unable to display route information, or not enough points available yet")
             }
         }
+        .ignoresSafeArea(.keyboard, edges: .all)
     }
 }

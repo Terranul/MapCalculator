@@ -20,11 +20,15 @@ struct Location: Identifiable, Equatable {
     let label: String
 }
 
-struct Route: Identifiable {
+struct Route: Identifiable, Equatable {
     let id = UUID()
     let source: Location
     let destination: Location
     let path: MKRoute?
+    
+    static func == (lhs: Route, rhs: Route) -> Bool {
+        return lhs.source == rhs.source && lhs.destination == rhs.destination
+    }
     
     init(source: Location, destination: Location) async {
         self.source = source
