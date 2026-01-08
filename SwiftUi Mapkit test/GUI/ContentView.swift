@@ -12,7 +12,9 @@ struct ContentView: View {
     let parses: ParseCourses = ParseCourses()
     
     var body: some View {
-        ConvertTouchToPoint()
+        NavigationStack {
+            ConvertTouchToPoint()
+        }
     }
 }
 

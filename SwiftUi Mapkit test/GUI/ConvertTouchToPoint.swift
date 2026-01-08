@@ -53,8 +53,17 @@ struct ConvertTouchToPoint: View {
                             CoordinateSelectionView(showTextField: $showTextField, selectedCoordinate: $selectedCoordinate, tracker: tracker)
                                 .padding(10)
                         }
-                        SelectablePicker()
-                            .environmentObject(tracker)
+                        HStack(alignment: .top) {
+                            SelectablePicker()
+                                .environmentObject(tracker)
+                            Spacer()
+                            NavigationLink {
+                                FileAccess()
+                            } label: {
+                                Text("Add File")
+                            }
+                            
+                        }
                         Spacer()
                         if let route = tracker.getSelectedRoute() {
                             RouteCard(route: route, tracker: tracker)

@@ -17,16 +17,11 @@ struct FileAccess: View {
     
     var body: some View {
         VStack {
-            
+            Text("This view should help print the file contents")
         }
-        .fileImporter(isPresented: $isDisplayed, allowedContentTypes: [.spreadsheet]) {result in 
-            
-//            switch result {
-//            case Result.success(let data):
-//                let url: URL = data
-//            case Result.failure(let error):
-                
-            }
+        .fileImporter(isPresented: $isDisplayed, allowedContentTypes: [.spreadsheet]) { result in
+            let value = parser.mapData(result: result)
         }
+    }
 
 }

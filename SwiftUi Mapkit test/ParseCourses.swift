@@ -8,26 +8,40 @@
 import CoreXLSX
 import Foundation
 
+struct Course {
+    var description: String
+    var days: [String] // values of type ["Mon", "Wed"]
+    var format: String // discussion, lecture, lab, tutorial...
+    var startTime: String
+    var endTime: String
+    var location: String // the four letter building code (like ICCS)
+    
+    init() {
+        self.description = ""
+        self.days = []
+        self.format = ""
+        self.startTime = ""
+        self.endTime = ""
+        self.location = ""
+    }
+    
+}
+
 class ParseCourses {
     
-    let filepath: String = "/Users/benfaraone/Downloads/Current_Classes.xlsx"
-    
-    func mapData() -> [String : String] {
-        print("entering function")
+    func mapData(result: Result<URL, any Error>) -> [String : String] {
+        
         let mapping: [String : String] = [:]
         
-        let exists = FileManager.default.fileExists(atPath: filepath)
-        print("Exists:", exists)
-        
-        guard let file = XLSXFile(filepath: filepath) else {
-            fatalError("XLSX file at \(filepath) is corrupted or does not exist")
-        }
-    
-        
         do {
-            // appararently we need this for some reason I don't understand
-            let sharedString: SharedStrings? = try file.parseSharedStrings()
+            let data: URL = try extractData(result: result)
+            defer {data.stopAccessingSecurityScopedResource()}
+            let file = XLSXFile(filepath: data.path)
             
+            guard let file else {
+                fatalError("Bitch")
+            }
+        
             let workbooks = try file.parseWorkbooks()
             // we just want the first workbook
             let inititalWorksheet : [(String?, String)] = try file.parseWorksheetPathsAndNames(workbook: workbooks.first!)
@@ -37,20 +51,174 @@ class ParseCourses {
             let curWorksheet = try file.parseWorksheet(at: worksheet.path)
             print("passed curWorksheet")
             
-            for row in curWorksheet.data?.rows ?? [] {
+            // the first row are the titles, so we don't need those
+            let rows = curWorksheet.data?.rows.dropFirst() ?? []
+            
+            for row in rows {
                 // we need to populate the current mapping
                 // format for each cell per row:
                 // course section format delivery meeting instructor
                 // course will be the key, and meeting will be the value (corresponding to index 0 and 4)
-                let data = row.cells
-                for cell in data {
-                    print(cell.stringValue(sharedString!)!)
-                }
+                _ = generateCourse(row: row)
             }
-        } catch {
-            fatalError("Error thrown bitch")
+        } catch let e as CoreXLSXError {
+            switch e {
+            case .archiveEntryNotFound:
+                print("Missing a required part of the XLSX file")
+            case .invalidCellReference:
+                print("invalidCellReference")
+            case .dataIsNotAnArchive:
+                print("data is not an archive ref")
+            case .unsupportedWorksheetPath:
+                print("If this error is thrown it is time to go fuck myself")
+            }
         }
-        return mapping
+            catch {
+                print("some other error")
+            }
+            return mapping
     }
+        
+    func extractData(result: Result<URL, any Error>) throws-> URL {
+        // the interface allows the user to select multiple files, so we get a list of URL
+        // for my case, the user is limited to one file, so there will only ever be one entry
+        switch result {
+        case Result.success(let data):
+            print(data.lastPathComponent)
+            // we need this for permission to use the user file
+            guard data.startAccessingSecurityScopedResource() else {
+                // if false
+                throw FileError()
+            }
+            return data
+        case Result.failure(_):
+            throw FileError()
+        }
+    }
+    
+    private func generateCourse(row: Row) -> Course {
+        var course: Course = Course()
+        let cells = row.cells
+        for i in 0..<cells.count {
+            guard var text = cells[i].inlineString?.text else {
+                continue
+            }
+            switch i {
+            case 0:
+                parseDescription(listing: text, course: &course)
+                print("description result: \(course.description)")
+            case 2:
+                course.format = text
+                print("format result: \(course.format)")
+            case 4:
+                parseDate(date: text, course: &course)
+                print("---------------------------------------")
+            default:
+                continue
+            }
+        }
+        return course
+    }
+    
+    private func parseDescription(listing: String, course: inout Course) {
+        // format "CPSC_V 304 - Introduction to Relational Databases"
+        let substring = listing[listing.startIndex..<listing.index(listing.startIndex, offsetBy: 10)]
+        course.description = String(substring)
+    }
+    
+    private func parseDate(date: String, course: inout Course) {
+        var result = date
+        result = String(result.dropFirst(25))
+        result = extractMeetingDays(days: result, course: &course)
+        print("Meeting Days result: \(course.days)")
+        result = parseTimes(days: result, course: &course)
+        print("Event times result: \(course.startTime) to \(course.endTime)")
+        parseLocation(days: result, course: &course)
+        print("Location result: \(course.location)")
+        
+    }
+    
+    private func extractMeetingDays(days: String, course: inout Course) -> String {
+        // in form " Tue Thu "
+        var list: [String] = []
+        var currentDay: String = ""
+        var count: Int = 0
+        for char in days {
+            if char == Character(" ") {
+                if (currentDay != "") {
+                    list.append(currentDay)
+                }
+                currentDay = ""
+            } else if (char == Character("|")) {
+                let half = currentDay.dropLast()
+                currentDay = String(half)
+                count += 1
+                break
+            } else {
+                currentDay.append(char)
+            }
+            count += 1
+        }
+        course.days = list
+        var result: String = days
+        result = String(result.dropFirst(count))
+        return result
+    }
+    
+    private func parseTimes(days: String, course: inout Course) -> String {
+        // in form " 12:30 p.m. - 2:00 p.m. "
+        var result = parseTime(days: days) { cur in
+            course.startTime = cur
+        }
+        result = parseTime(days: result) { cur in
+            course.endTime = cur
+        }
+        return result
+    }
+    
+    private func parseTime(days: String, onTermination: (String) -> Void) -> String{
+        var data = days
+        data = String(data.dropFirst())
+        var count = 0
+        var cur = ""
+        for char in data {
+            if (char == Character("-") || char == Character("|")) {
+                count += 1
+                data = String(data.dropFirst(count))
+                cur = String(cur.dropLast())
+                onTermination(cur)
+                return data
+            } else {
+                cur.append(char)
+                count += 1
+            }
+        }
+        return "Invalid result"
+    }
+    
+    private func parseLocation(days: String, course: inout Course) {
+        var count = 0
+        var cur = ""
+        var data = days
+        data = String(data.dropFirst(6))
+        for char in data {
+            if char == Character("(") {
+                count += 1
+                data = String(data.dropFirst(count))
+                break
+            }
+            count += 1
+        }
+        count = 0
+        for char in data {
+            if char == Character(")") {
+                course.location = cur
+                return
+            } else {
+                cur.append(char)
+            }
+        }
+    }
+    
     
 }
