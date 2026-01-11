@@ -7,6 +7,7 @@
 
 import CoreXLSX
 import Foundation
+import CoreLocation
 
 struct Course {
     var description: String
@@ -29,9 +30,9 @@ struct Course {
 
 class ParseCourses {
     
-    func mapData(result: Result<URL, any Error>) -> [String : String] {
+    func mapData(result: Result<URL, any Error>) -> [Course] {
         
-        let mapping: [String : String] = [:]
+        var mapping: [Course] = []
         
         do {
             let data: URL = try extractData(result: result)
@@ -55,11 +56,7 @@ class ParseCourses {
             let rows = curWorksheet.data?.rows.dropFirst() ?? []
             
             for row in rows {
-                // we need to populate the current mapping
-                // format for each cell per row:
-                // course section format delivery meeting instructor
-                // course will be the key, and meeting will be the value (corresponding to index 0 and 4)
-                _ = generateCourse(row: row)
+                mapping.append(generateCourse(row: row))
             }
         } catch let e as CoreXLSXError {
             switch e {
@@ -100,7 +97,7 @@ class ParseCourses {
         var course: Course = Course()
         let cells = row.cells
         for i in 0..<cells.count {
-            guard var text = cells[i].inlineString?.text else {
+            guard let text = cells[i].inlineString?.text else {
                 continue
             }
             switch i {
@@ -217,6 +214,44 @@ class ParseCourses {
             } else {
                 cur.append(char)
             }
+        }
+    }
+    
+    @MainActor
+    func formatDataSelection(result: Result<URL, any Error>) {
+        // this function is the bridge between the course format in this class, and the location format in the dayTracker
+        let tracker = DayTracker.getInstance(internalSelect: "Mon")
+        let courses = mapData(result: result)
+        let decoder = JSONController()
+        let mapping = decoder.returnJSONMapping()
+        let formatter = FormatTime()
+        let curSelection = tracker.getSelection()
+        for course in courses {
+            // it may be easier to build the day:location dictionary here, but it is better to use the functions in the tracker so
+            // previous data is preserved and we don't mess up the trackers internal select values
+            let coordinate = convertLocationCode(code: course.location, mapping: mapping)
+            let startTime = formatter.convertTo24HR(time: course.startTime)
+            let endTime = formatter.convertTo24HR(time: course.endTime)
+            let location = Location(coord: coordinate, arrivalTime: arrivalTime, exitTime: exitTime, label: course.description)
+            // we want to keep track of the selection the tracker had before so we can put everything back the way it was after we inject data
+            for days in course.days {
+                tracker.swapSelection(value: day)
+                tracker.addData(value: location)
+            }
+        }
+        tracker.internalSelect = curSelection
+        // the view should activate the task for these so it we don't need to generate the routes here
+    }
+    
+    private func convertLocationCode(code: String, mapping: [String: MapLoc]) -> CLLocationCoordinate2D? {
+        if let loc = mapping[code] {
+            let coord = CLLocationCoordinate2D(latitude: Double(loc.latitude), longitude: Double(loc.longitude))
+            return coord
+        } else {
+            // entry not in current data. In the future we may add an ability for the user to submit the location
+            // for now we will omit
+            print("Unable to find location data for bulding \(code), omitting")
+            return nil
         }
     }
     

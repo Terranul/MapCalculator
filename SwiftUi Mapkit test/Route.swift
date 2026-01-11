@@ -11,13 +11,14 @@ import CoreLocation
 
 struct Location: Identifiable, Equatable {
     static func == (lhs: Location, rhs: Location) -> Bool {
-        return lhs.time == rhs.time
+        return lhs.label == rhs.label
     }
     // CLLocationCoordinate2D doesn't conform to equatable or hashable, which means we need an extra struct for iteration
     let id = UUID()
-    let coord: CLLocationCoordinate2D
-    let time: String
-    let label: String
+    var coord: CLLocationCoordinate2D
+    var arrivalTime: String? = nil // if arrival time is nil, it means user specified only one time. It is specified as the exitTime
+    var exitTime: String
+    var label: String
 }
 
 struct Route: Identifiable, Equatable {
@@ -42,7 +43,7 @@ struct Route: Identifiable, Equatable {
             let response = try await calculateRoutes(request)
             return response.routes.first!
         } catch {
-            print("Could not generate a path from \(source.time) to \(destination.time)")
+            print("Could not generate a path from \(source.exitTime) to \(destination.arrivalTime ?? destination.exitTime)")
         }
         return nil
     }
@@ -79,8 +80,8 @@ struct Route: Identifiable, Equatable {
     // travel time of the MKRoute
     public func calculateExcessTime() -> String {
         let formatter = FormatTime()
-        let sourceDate = formatter.convert(time: destination.time)
-        let interval: Double = sourceDate.timeIntervalSince(formatter.convert(time: source.time))
+        let sourceDate = formatter.convert(time: source.exitTime)
+        let interval: Double = sourceDate.timeIntervalSince(formatter.convert(time: destination.arrivalTime ?? destination.exitTime))
         let excessTime: Int = Int(interval - path!.expectedTravelTime)
         return "\(excessTime / 60)m \(excessTime % 60)s"
     }

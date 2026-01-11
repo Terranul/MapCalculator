@@ -8,3 +8,4 @@
 struct FileError: Error {
     
 }
+

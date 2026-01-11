@@ -14,7 +14,7 @@ struct RouteCard: View {
     
     var body: some View {
         VStack {
-            Text("\(route.source.time) - \(route.destination.time)")
+            Text("\(route.source.exitTime) - \(route.destination.arrivalTime ?? route.destination.exitTime)")
                 .font(.headline)
                 .foregroundStyle(.black)
             HStack {

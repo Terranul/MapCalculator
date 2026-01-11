@@ -14,7 +14,7 @@ struct ConvertTouchToPoint: View {
     @State private var curLabel: String = ""
     @State public var selectedCoordinate: CLLocationCoordinate2D?
     @State public var showTextField: Bool = false
-    @StateObject private var tracker: DayTracker = DayTracker(internalSelect: "Mon")
+    @StateObject private var tracker: DayTracker = DayTracker.getInstance(internalSelect: "Mon")
     
     @State private var position: MapCameraPosition =
         .camera(
@@ -33,7 +33,7 @@ struct ConvertTouchToPoint: View {
                 ZStack(alignment: .top) {
                     Map(position: $position) {
                         ForEach(tracker.getData()) { location in
-                            Marker("\(location.label) \(location.time)", coordinate: location.coord)
+                            Marker("\(location.label) \n \(location.arrivalTime ?? "") - \(location.exitTime)", coordinate: location.coord)
                         }
                         ForEach(tracker.currentRoutes) { route in
                             MapPolyline(route.path!)

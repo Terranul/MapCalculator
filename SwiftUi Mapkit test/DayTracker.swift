@@ -9,6 +9,9 @@ import SwiftUI
 internal import Combine
 import CoreLocation
 
+// we can have multiple modifications concurrently by either the user or the parse courses
+// we could use actor, but it would make all access async
+// so, make sure to put anything mutating this class on the main thread
 class DayTracker: ObservableObject {
     
     // the dayTracker and FormatTime should realisticly be combined, but this class was a late addition
@@ -19,8 +22,14 @@ class DayTracker: ObservableObject {
     @Published private(set) var internalSelect: String
     private var data: [String : [Location]] = [ : ]
     
+    static var instance: DayTracker? = nil
+    
     init(internalSelect: String) {
         self.internalSelect = internalSelect
+    }
+    
+    public static func getInstance(internalSelect: String) -> DayTracker  {
+        return instance ?? DayTracker(internalSelect: "Mon")
     }
     
     func addData(value: Location) {

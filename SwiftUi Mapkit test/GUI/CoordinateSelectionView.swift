@@ -39,7 +39,8 @@ struct CoordinateSelectionView: View {
                 Button {
                     if let selectedCoordinate {
                         if tracker.isValidTime(value: time) {
-                            let curLocation = Location(coord: selectedCoordinate, time: time, label: curLabel)
+                            // for now all user inputted times will only be able to provide one time
+                            let curLocation = Location(coord: selectedCoordinate, exitTime: time, label: curLabel)
                             tracker.addData(value: curLocation)
                             curLabel = ""
                             showTextField = false

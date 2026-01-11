@@ -7,6 +7,11 @@
 
 import Foundation
 
+extension DateFormatter {
+    // the formatter is still expensive...
+    static let cachedDate = DateFormatter()
+}
+
 struct FormatTime {
     
     
@@ -22,7 +27,7 @@ struct FormatTime {
     }
     
     func returnPreferredFormatter() -> DateFormatter {
-        let formatter = DateFormatter()
+        let formatter = DateFormatter.cachedDate
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm"
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
@@ -61,5 +66,17 @@ struct FormatTime {
         } else {
             return false
         }
+    }
+    
+    // expected for inputs like HH:MM p.m./a.m.
+    func convertTo24HR(time: String) -> String {
+        var timeRep = time
+        timeRep = timeRep.replacingOccurrences(of: "p.m.", with: "PM")
+        timeRep = timeRep.replacingOccurrences(of: "a.m.", with: "AM")
+        let formatter = DateFormatter.cachedDate
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "h:mm a"
+        let date = formatter.date(from: timeRep)
+        return date
     }
 }
