@@ -12,8 +12,8 @@ struct LocationSet: Decodable {
 }
 
 struct MapLoc: Decodable {
-    let latitude: Int
-    let longitude: Int
+    let latitude: Double
+    let longitude: Double
 }
 
 class JSONController {
@@ -29,12 +29,13 @@ class JSONController {
     func returnJSONMapping() -> [String : MapLoc] {
         do {
             let data: Data = try returnJsonData()
+            print("passed data")
             let decoder = JSONDecoder()
             let set = try decoder.decode(LocationSet.self, from: data)
             return set.locations
         } catch {
             // bit of a hack, but will be sort of useful
-            print("unable to correctly decode json data")
+            print("JSON decode error:", error)
             return [:]
         }
     }

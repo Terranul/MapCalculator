@@ -31,6 +31,7 @@ struct Course {
 class ParseCourses {
     
     func mapData(result: Result<URL, any Error>) -> [Course] {
+        print("entered map data")
         
         var mapping: [Course] = []
         
@@ -87,6 +88,7 @@ class ParseCourses {
                 // if false
                 throw FileError()
             }
+            print("passed extract data")
             return data
         case Result.failure(_):
             throw FileError()
@@ -173,7 +175,7 @@ class ParseCourses {
         return result
     }
     
-    private func parseTime(days: String, onTermination: (String) -> Void) -> String{
+    private func parseTime(days: String, onTermination: (String) -> Void) -> String {
         var data = days
         data = String(data.dropFirst())
         var count = 0
@@ -219,6 +221,7 @@ class ParseCourses {
     
     @MainActor
     func formatDataSelection(result: Result<URL, any Error>) {
+        print("Entered data selection")
         // this function is the bridge between the course format in this class, and the location format in the dayTracker
         let tracker = DayTracker.getInstance(internalSelect: "Mon")
         let courses = mapData(result: result)
@@ -229,17 +232,19 @@ class ParseCourses {
         for course in courses {
             // it may be easier to build the day:location dictionary here, but it is better to use the functions in the tracker so
             // previous data is preserved and we don't mess up the trackers internal select values
-            let coordinate = convertLocationCode(code: course.location, mapping: mapping)
+            guard let coordinate = convertLocationCode(code: course.location, mapping: mapping) else {
+                continue
+            }
             let startTime = formatter.convertTo24HR(time: course.startTime)
             let endTime = formatter.convertTo24HR(time: course.endTime)
-            let location = Location(coord: coordinate, arrivalTime: arrivalTime, exitTime: exitTime, label: course.description)
+            let location = Location(coord: coordinate, arrivalTime: startTime, exitTime: endTime, label: course.description)
             // we want to keep track of the selection the tracker had before so we can put everything back the way it was after we inject data
-            for days in course.days {
+            for day in course.days {
                 tracker.swapSelection(value: day)
                 tracker.addData(value: location)
             }
         }
-        tracker.internalSelect = curSelection
+        tracker.swapSelection(value: curSelection)
         // the view should activate the task for these so it we don't need to generate the routes here
     }
     

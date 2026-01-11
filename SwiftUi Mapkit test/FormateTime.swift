@@ -49,9 +49,9 @@ struct FormatTime {
     }
     
     func convertLocations(locations: [Location]) -> [Location] {
-        return locations.sorted { loc1, loc2 in
-            let loc1Date = convert(time: loc1.time)
-            let loc2Date = convert(time: loc2.time)
+        return locations.sorted { (loc1: Location, loc2: Location) in
+            let loc1Date: Date = convert(time: loc1.exitTime)
+            let loc2Date: Date = convert(time: loc2.exitTime)
             return loc1Date < loc2Date
         }
     }
@@ -77,6 +77,14 @@ struct FormatTime {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "h:mm a"
         let date = formatter.date(from: timeRep)
-        return date
+        if let date = date {
+            let outputFormatter = DateFormatter.cachedDate
+                outputFormatter.locale = Locale(identifier: "en_US_POSIX")
+                outputFormatter.dateFormat = "HH:mm"
+
+                return outputFormatter.string(from: date)
+        } else {
+            return ""
+        }
     }
 }

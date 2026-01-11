@@ -1,7 +1,6 @@
 
-// coordinate representation of every single building code at ubc
 {
-  "locations": {
+    "locations": {
     "ALRD": { "latitude": 49.2698251, "longitude": -123.2530527 },
     "ANSO": { "latitude": 49.2701809, "longitude": -123.2575901 },
     "AERL": { "latitude": 49.263636, "longitude": -123.2512244 },

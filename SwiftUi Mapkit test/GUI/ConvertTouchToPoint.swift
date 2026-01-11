@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreLocation
 import MapKit
+internal import UniformTypeIdentifiers
 
 struct ConvertTouchToPoint: View {
     
@@ -15,6 +16,8 @@ struct ConvertTouchToPoint: View {
     @State public var selectedCoordinate: CLLocationCoordinate2D?
     @State public var showTextField: Bool = false
     @StateObject private var tracker: DayTracker = DayTracker.getInstance(internalSelect: "Mon")
+    @State public var isDisplayed: Bool = false
+    private let parser: ParseCourses = ParseCourses()
     
     @State private var position: MapCameraPosition =
         .camera(
@@ -57,10 +60,10 @@ struct ConvertTouchToPoint: View {
                             SelectablePicker()
                                 .environmentObject(tracker)
                             Spacer()
-                            NavigationLink {
-                                FileAccess()
+                            Button {
+                                isDisplayed = true
                             } label: {
-                                Text("Add File")
+                               Text("Upload file")
                             }
                             
                         }
@@ -73,6 +76,9 @@ struct ConvertTouchToPoint: View {
                     }
                 }
             }
+        }
+        .fileImporter(isPresented: $isDisplayed, allowedContentTypes: [.spreadsheet]) { result in
+            parser.formatDataSelection(result: result)
         }
         .task(id: tracker.currentSelection) {
             do {

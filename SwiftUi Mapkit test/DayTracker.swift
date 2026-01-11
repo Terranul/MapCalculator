@@ -29,7 +29,12 @@ class DayTracker: ObservableObject {
     }
     
     public static func getInstance(internalSelect: String) -> DayTracker  {
-        return instance ?? DayTracker(internalSelect: "Mon")
+        if let instance {
+            return instance
+        } else {
+            instance = DayTracker(internalSelect: "Mon")
+            return instance!
+        }
     }
     
     func addData(value: Location) {
@@ -109,8 +114,8 @@ class DayTracker: ObservableObject {
     }
     
     func getDummyRoute() async -> Route {
-        let source = Location(coord: CLLocationCoordinate2D(latitude: 55.75700, longitude: 37.62000), time: "12:00", label: "dummy")
-        let destination = Location(coord: CLLocationCoordinate2D(latitude: 55.74790, longitude: 37.62000), time: "13:00", label: "dummy#2")
+        let source = Location(coord: CLLocationCoordinate2D(latitude: 55.75700, longitude: 37.62000), exitTime: "12:00", label: "dummy")
+        let destination = Location(coord: CLLocationCoordinate2D(latitude: 55.74790, longitude: 37.62000), exitTime: "13:00", label: "dummy#2")
         return await Route(source: source, destination: destination)
     }
 }
