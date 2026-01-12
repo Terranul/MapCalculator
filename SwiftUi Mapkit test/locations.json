@@ -74,7 +74,10 @@
     "EDC": { "latitude": 49.2623367, "longitude": -123.2482747 },
     "WESB": { "latitude": 49.2653979, "longitude": -123.2494465 },
     "WMAX": { "latitude": 49.2659713, "longitude": -123.2569072 },
-    "SWNG": { "latitude": 49.2629185, "longitude": -123.2544623 }
+    "SWNG": { "latitude": 49.2629185, "longitude": -123.2544623 },
+    "SHRM": { "latitude" : 49.265488, "longitude" : -123.248297},
+    "Aquatic Ecosystems Research Laboratory": {"latitude" : 49.264150, "longitude" : -123.252039}
+    
   }
 }
 

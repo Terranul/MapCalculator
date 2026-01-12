@@ -16,6 +16,7 @@ struct Course {
     var startTime: String
     var endTime: String
     var location: String // the four letter building code (like ICCS)
+    var semCode: String // value of either "Sem 1" or "Sem 2"
     
     init() {
         self.description = ""
@@ -24,6 +25,7 @@ struct Course {
         self.startTime = ""
         self.endTime = ""
         self.location = ""
+        self.semCode = ""
     }
     
 }
@@ -127,6 +129,8 @@ class ParseCourses {
     
     private func parseDate(date: String, course: inout Course) {
         var result = date
+        parseSemester(days: date, course: &course)
+        print("Semester code result: \(course.semCode)")
         result = String(result.dropFirst(25))
         result = extractMeetingDays(days: result, course: &course)
         print("Meeting Days result: \(course.days)")
@@ -219,16 +223,28 @@ class ParseCourses {
         }
     }
     
+    private func parseSemester(days: String, course: inout Course) {
+        // always going to be in a format of equal length and disposition to '2025-09-04 - 2025-12-04' (23 char)
+        // to determine sem 1 or sem 2, we will compare the starting date with a reference date
+        let date = days[days.startIndex..<days.index(days.startIndex, offsetBy: 10)]
+        let formatter = FormatTime()
+        let semCode = formatter.determineSemester(value: String(date))
+        course.semCode = semCode
+    }
+    
     @MainActor
     func formatDataSelection(result: Result<URL, any Error>) {
+        let tracker = DayTracker.getInstance(selectedDay: "Mon", selectedSemester: "Sem1")
+        // reset all data in the tracker for now
+        tracker.resetData()
         print("Entered data selection")
         // this function is the bridge between the course format in this class, and the location format in the dayTracker
-        let tracker = DayTracker.getInstance(internalSelect: "Mon")
         let courses = mapData(result: result)
         let decoder = JSONController()
         let mapping = decoder.returnJSONMapping()
         let formatter = FormatTime()
-        let curSelection = tracker.getSelection()
+        let curDaySelection = tracker.getDaySelection()
+        let curSemSelection = tracker.getSelectedSemester()
         for course in courses {
             // it may be easier to build the day:location dictionary here, but it is better to use the functions in the tracker so
             // previous data is preserved and we don't mess up the trackers internal select values
@@ -237,14 +253,16 @@ class ParseCourses {
             }
             let startTime = formatter.convertTo24HR(time: course.startTime)
             let endTime = formatter.convertTo24HR(time: course.endTime)
-            let location = Location(coord: coordinate, arrivalTime: startTime, exitTime: endTime, label: course.description)
+            let location = Location(coord: coordinate, arrivalTime: startTime, exitTime: endTime, label: "\(course.description) \(course.format)")
             // we want to keep track of the selection the tracker had before so we can put everything back the way it was after we inject data
+            course.semCode == "Sem 1" ? tracker.swapSelection(value: "Sem 1") : tracker.swapSelection(value: "Sem 2")
             for day in course.days {
                 tracker.swapSelection(value: day)
                 tracker.addData(value: location)
             }
         }
-        tracker.swapSelection(value: curSelection)
+        tracker.swapSelection(value: curDaySelection)
+        tracker.swapSelection(value: curSemSelection)
         // the view should activate the task for these so it we don't need to generate the routes here
     }
     

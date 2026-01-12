@@ -15,7 +15,7 @@ struct ConvertTouchToPoint: View {
     @State private var curLabel: String = ""
     @State public var selectedCoordinate: CLLocationCoordinate2D?
     @State public var showTextField: Bool = false
-    @StateObject private var tracker: DayTracker = DayTracker.getInstance(internalSelect: "Mon")
+    @StateObject private var tracker: DayTracker = DayTracker.getInstance(selectedDay: "Mon", selectedSemester: "Sem1")
     @State public var isDisplayed: Bool = false
     private let parser: ParseCourses = ParseCourses()
     
@@ -57,15 +57,20 @@ struct ConvertTouchToPoint: View {
                                 .padding(10)
                         }
                         HStack(alignment: .top) {
-                            SelectablePicker()
+                            SelectablePicker(showTextField: $showTextField)
                                 .environmentObject(tracker)
                             Spacer()
                             Button {
                                 isDisplayed = true
                             } label: {
-                               Text("Upload file")
+                                Image(.document)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(.white)
+                                            .frame(width: 50, height: 50)
+                                    )
                             }
-                            
+                            .padding(20)
                         }
                         Spacer()
                         if let route = tracker.getSelectedRoute() {

@@ -9,6 +9,10 @@ import SwiftUI
 internal import Combine
 import CoreLocation
 
+struct Selection {
+    // an internal struct representing the current overall selection of the user
+}
+
 // we can have multiple modifications concurrently by either the user or the parse courses
 // we could use actor, but it would make all access async
 // so, make sure to put anything mutating this class on the main thread
@@ -17,33 +21,61 @@ class DayTracker: ObservableObject {
     // the dayTracker and FormatTime should realisticly be combined, but this class was a late addition
     
     @Published private(set) var currentSelection: [Location] = []
-    @Published private(set) var selectedRoute: Int = 0
     @Published public var currentRoutes: [Route] = []
-    @Published private(set) var internalSelect: String
-    private var data: [String : [Location]] = [ : ]
-    
+    private var dataSem1: [String : [Location]] = [ : ]
+    private var dataSem2: [String : [Location]] = [ : ]
     static var instance: DayTracker? = nil
     
-    init(internalSelect: String) {
-        self.internalSelect = internalSelect
+    @Published private(set) var selectedRoute: Int // the index value of the selected route
+    @Published private(set) var selectedDay: String // the day code of the selected day ("Mon, Tue, Wed, Thu, Fri, Sat, Sun")
+    @Published private(set) var selectedSemester: String // the semester code of the selected semester ("Sem1, Sem2")
+    
+    init(selectedDay: String, selectedSemester: String) {
+        self.selectedRoute = 0
+        self.selectedDay = selectedDay
+        self.selectedSemester = selectedSemester
     }
     
-    public static func getInstance(internalSelect: String) -> DayTracker  {
+    public static func getInstance(selectedDay: String, selectedSemester: String) -> DayTracker  {
         if let instance {
             return instance
         } else {
-            instance = DayTracker(internalSelect: "Mon")
+            instance = DayTracker(selectedDay: selectedDay, selectedSemester: selectedSemester)
             return instance!
         }
     }
     
+    private func getSelectedSemesterData() -> [String: [Location]] {
+        switch(selectedSemester) {
+        case "Sem 1":
+            return dataSem1
+        case "Sem 2":
+            return dataSem2
+        default:
+            return dataSem1
+        }
+    }
+    
+    private func setSelectedSemesterData(value: [String: [Location]]) {
+        switch (selectedSemester) {
+        case "Sem 1":
+            dataSem1 = value
+        case "Sem 2":
+            dataSem2 = value
+        default:
+            dataSem1 = value
+        }
+    }
+    
     func addData(value: Location) {
-        var curValue: [Location] = data[internalSelect, default: []]
+        var curSemester: [String: [Location]] = getSelectedSemesterData()
+        var curValue: [Location] = curSemester[selectedDay, default: []]
         curValue.append(value)
         // reorder after every addition
         let formatter = FormatTime()
         let orderedSelection = formatter.convertLocations(locations: curValue)
-        data[internalSelect] = orderedSelection
+        curSemester[selectedDay] = orderedSelection
+        setSelectedSemesterData(value: curSemester)
         currentSelection = orderedSelection
     }
     
@@ -53,9 +85,15 @@ class DayTracker: ObservableObject {
     }
     
     func swapSelection(value: String) {
-        internalSelect = value
-        currentSelection = data[internalSelect, default: []]
-        selectedRoute = 0
+        if (value == "Sem 1" || value == "Sem 2") {
+            // this case we want to filter the semester selection
+            selectedSemester = value
+            currentSelection = getSelectedSemesterData()[selectedDay, default: []]
+        } else {
+            selectedDay = value
+            currentSelection = getSelectedSemesterData()[selectedDay, default: []]
+            selectedRoute = 0
+        }
     }
     
     func incrementRouteSelection() {
@@ -78,17 +116,17 @@ class DayTracker: ObservableObject {
     }
     
     func getData() -> [Location] {
-        return data[internalSelect, default: []]
+        return getSelectedSemesterData()[selectedDay, default: []]
     }
     
-    func getSelection() -> String {
-        return internalSelect
+    func getDaySelection() -> String {
+        return selectedDay
     }
     
     func generateRoutes() async throws {
         print("Updating routes!")
         
-        let locations = data[internalSelect, default: []]
+        let locations = getSelectedSemesterData()[selectedDay, default: []]
         var routes: [Route] = []
         
         guard locations.count >= 2 else {
@@ -109,8 +147,17 @@ class DayTracker: ObservableObject {
         }
     }
     
+    func resetData() {
+        dataSem1 = [ : ]
+        dataSem2 = [ : ]
+    }
+    
     func hasRouteData() -> Bool {
         return !(currentRoutes.isEmpty)
+    }
+    
+    func getSelectedSemester() -> String {
+        return selectedSemester
     }
     
     func getDummyRoute() async -> Route {

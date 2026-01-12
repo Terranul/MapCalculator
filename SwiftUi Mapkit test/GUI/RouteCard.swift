@@ -18,6 +18,26 @@ struct RouteCard: View {
                 .font(.headline)
                 .foregroundStyle(.black)
             HStack {
+                Text(route.source.label)
+                    .font(.headline)
+                    .foregroundStyle(.black)
+                    .padding(2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Text("TO")
+                    .font(.headline)
+                    .foregroundStyle(.gray)
+                    .padding(2)
+                Spacer()
+                Text(route.destination.label)
+                    .font(.headline)
+                    .foregroundStyle(.black)
+                    .padding(2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack {
                 VStack (alignment: .center){
                     Text(route.travelTime())
                         .foregroundStyle(.black)

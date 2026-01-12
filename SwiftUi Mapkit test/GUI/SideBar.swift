@@ -11,23 +11,42 @@ struct SelectablePicker: View {
     
     @State public var isVisisble: Bool = false
     @State var selection: Int = 0
+    @State var semSelection: Int = 0
+    @Binding var showTextField: Bool
     private let items: [String] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    private let semesters: [String] = ["Sem 1", "Sem 2"]
     
     var body: some View {
         VStack {
-            Text("More")
+            Image(.sidebar)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
                         .fill(.white)
+                        .frame(width: 50, height: 50)
                 )
                 .onTapGesture {
                     withAnimation {
-                        isVisisble.toggle()
+                        if !showTextField {
+                            isVisisble.toggle()
+                        } else {
+                            if (!isVisisble) {
+                                isVisisble.toggle()
+                            }
+                        }
                     }
                 }
-                .padding(5)
-            if isVisisble {
-                VerticalPicker(items: items, selectHeight: 40, frameWidth: 40, selection: $selection) { item in
+                .padding(.init(top: 15, leading: 20, bottom: 20, trailing: 20))
+            if isVisisble && !showTextField{
+                VerticalPicker(items: items, selectHeight: 55, frameWidth: 55, selection: $selection) { item in
+                    Text(item)
+                        .foregroundStyle(item == items[selection] ? .white : .black)
+                        .padding(5)
+                }
+                .transition(.move(edge: .leading))
+                
+                .padding(.bottom, 10)
+                // the picker is general and will always call swapSelection in tracker put luckily the function will diffrentiate between Day inputs
+                VerticalPicker(items: semesters, selectHeight: 55, frameWidth: 55, selection: $semSelection) { item in
                     Text(item)
                         .foregroundStyle(item == items[selection] ? .white : .black)
                         .padding(5)
